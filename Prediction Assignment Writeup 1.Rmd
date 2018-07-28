@@ -1,0 +1,132 @@
+---
+title: "Peer-graded Assignment: Prediction Assignment Writeup"
+author: "Andualem Bekele"
+date: "June 30, 2018"
+output: html_document
+---
+---
+title: "Untitled"
+author: "Andualem Bekele"
+date: "June 30, 2018"
+output: html_document
+---
+---
+title: 'Peer-graded Assignment: Prediction Assignment Writeup'
+author: "Andualem Bekele"
+date: "June 30, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Summary
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+##2. Data
+The training data for this project are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+The test data are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+```{r}
+library(caret)
+library(rpart);
+library(ggplot2);
+library(randomForest)
+```
+##Reading and Cleaning Data
+```{r}
+
+
+train<- read.csv("C:/Users/abekele/Documents/Corsera/Machine Learning/pml-training.csv")
+test<- read.csv("C:/Users/abekele/Documents/Corsera/Machine Learning/pml-testing.csv")
+
+dim(train)
+
+
+
+dim(test)
+
+```
+
+Removing missing values that contain N/A.
+
+```{r}
+train <- train[, colSums(is.na(train)) == 0] 
+test <- test[, colSums(is.na(test)) == 0] 
+
+```
+
+Listing column names of traning dataset
+
+```{r}
+head(colnames(train))
+
+```
+
+```{r}
+
+classe <- train$classe
+trainR <- grepl("^X|timestamp|window", names(train))
+train <- train[, !trainR]
+trainM <- train[, sapply(train, is.numeric)]
+trainM$classe <- classe
+testR <- grepl("^X|timestamp|window", names(test))
+test<- test[, !testR]
+testM <- test[, sapply(test, is.numeric)]
+
+
+dim(train)
+
+
+
+dim(test)
+```
+
+```{r}
+set.seed(12345) 
+inTrain <- createDataPartition(trainM$classe, p=0.70, list=F)
+train_data <- trainM[inTrain, ]
+test_data <- trainM[-inTrain, ]
+
+```
+##Data Prediction and Modelling
+###Randon Forest
+Random Forest as the predictive Model.
+```{r}
+setting <- trainControl(method="cv", 5)
+RandomForest <- train(classe ~ ., data=train_data, method="rf", trControl=setting, ntree=250)
+RandomForest
+
+```
+estimating the performance of the model, getting the accuracy and estimated out-of-sample error.
+
+```{r}
+predict_RandomForest <- predict(RandomForest, test_data)
+confusionMatrix(test_data$classe, predict_RandomForest)
+
+```
+
+###Decision Tree
+Uing Decision Tree as the predictive Model. 
+```{r}
+model_tree <- rpart(classe ~ ., data=train_data, method="class")
+prediction_tree <- predict(model_tree, test_data, type="class")
+class_tree <- confusionMatrix(prediction_tree, test_data$classe)
+class_tree
+
+library(rpart.plot)
+rpart.plot(model_tree)
+
+```
+
+
+##4.Conclusions
+The Random Forest is a much accurate predictive model than the Decision TreeIt has an accuracy of 99.9%.
+
+In this study, the characteristics of NA values , low variance, correlation and skewness of both traning and testing datasets (train and test) are reduced. Therefore, the variables of the data sets are scaled. The training dataset is divided into training and validation parts to construct a predictive model and evaluate its accuracy. Decision Tree and Random Forest were used.The Random Forest produced a  much better predictive model ( more than 99%) than the Decision Tree. This analysis is reproducible and the environment and information is as follows:
+
+```{r}
+sessionInfo()
+```
